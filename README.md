@@ -13,13 +13,13 @@ Writeups are organized by platform and challenge:
 
 ```
 writeups/
-├── tryhackme/
-│ ├── room-name-1.md
-│ ├── room-name-2.md
-├── hackthebox/
-│ ├── retired-machine-name.md
-├── custom-ctf/
-│ ├── challenge-name.md
+   ├── tryhackme/
+     ├── room-name-1.md
+     ├── room-name-2.md
+   ├── hackthebox/
+     ├── retired-machine-name.md
+  ├── custom-ctf/
+     ├── challenge-name.md
 ```
 
 
