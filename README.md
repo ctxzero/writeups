@@ -39,4 +39,3 @@ Each writeup includes:
 - All content reflects my own understanding, workflow, and learning process—no copy-paste solutions.
 
 
-> _"Practice like you've never won. Perform like you've never lost."_
