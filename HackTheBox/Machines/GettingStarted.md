@@ -67,6 +67,7 @@ Next we did a Gobuster Scan as follows: gobuster dir -u http://gettingstarted.ht
 
 So after enumerating the directories we found that the getsimple cms is in use --> readme.txt directory
 We also found the Credentials for the admin account -> data/users/admin.xml
+
 <img width="622" height="198" alt="image" src="https://github.com/user-attachments/assets/2046138b-4dfe-4a03-b04a-44ba71ca9dbf" />
 
 After cracking the password, it's: admin
