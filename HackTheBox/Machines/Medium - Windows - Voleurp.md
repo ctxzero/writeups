@@ -1,7 +1,7 @@
 
 # HackTheBox — Voleur
 
-**Difficulty:** Medium | **OS:** Windows | **Category:** Active Directory
+**Difficulty:** Medium | **OS:** Windows 
 
 ---
 
