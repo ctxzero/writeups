@@ -1,11 +1,11 @@
 
-# Redelegate — VulnLab Writeup
+# Redelegate — HackTheBox Writeup
 
 ![Difficulty](https://img.shields.io/badge/Difficulty-Medium-orange) ![OS](https://img.shields.io/badge/OS-Windows-blue) ![Category](https://img.shields.io/badge/Category-Active%20Directory-purple)
 
 ## Overview
 
-Redelegate is a Windows Active Directory machine from VulnLab. The attack chain starts with anonymous FTP access exposing a KeePass database, pivots through MSSQL-based domain user enumeration, performs password spraying to gain a foothold, and culminates in a Constrained Delegation abuse leveraging `SeEnableDelegationPrivilege` to achieve full domain compromise via DCSync.
+Redelegate is a Windows Active Directory machine from HackTheBox. The attack chain starts with anonymous FTP access exposing a KeePass database, pivots through MSSQL-based domain user enumeration, performs password spraying to gain a foothold, and culminates in a Constrained Delegation abuse leveraging `SeEnableDelegationPrivilege` to achieve full domain compromise via DCSync.
 
 **Key Techniques:**
 
