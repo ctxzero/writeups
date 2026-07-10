@@ -1,5 +1,5 @@
 
-# HackTheBox — Administrator
+# HackTheBox - Administrator
 
  **Difficulty:** Medium | **OS:** Windows 
  
@@ -7,7 +7,7 @@
 
 ## Overview
 
-Administrator is a medium-difficulty Active Directory machine that simulates a realistic Windows pentest scenario. Starting with a low-privileged domain account, the attack path chains multiple AD misconfigurations — `GenericAll`, `ForceChangePassword`, and `GenericWrite` — to escalate laterally across several user accounts before leveraging `GetChangesAll` to perform a DCSync and obtain the domain Administrator hash.
+Administrator is a medium-difficulty Active Directory machine that simulates a realistic Windows pentest scenario. Starting with a low-privileged domain account, the attack path chains multiple AD misconfigurations - `GenericAll`, `ForceChangePassword`, and `GenericWrite` - to escalate laterally across several user accounts before leveraging `GetChangesAll` to perform a DCSync and obtain the domain Administrator hash.
 
 **Attack Path Summary:**
 
@@ -173,7 +173,7 @@ Spraying all three accounts against WinRM to check for password reuse:
 nxc winrm 10.129.2.50 -u users.txt -p passwords.txt
 ```
 
-**Hit:** `emily : UXLCI5iETUsIBoFVTj8yQFKoHjXmb` — WinRM access confirmed.
+**Hit:** `emily : UXLCI5iETUsIBoFVTj8yQFKoHjXmb` - WinRM access confirmed.
 
 <img width="976" height="32" alt="Pasted image 20260522204528" src="https://github.com/user-attachments/assets/b672c554-a9c6-4081-b12a-b86adb1a2d14" />
 
@@ -182,7 +182,7 @@ nxc winrm 10.129.2.50 -u users.txt -p passwords.txt
 
 ## Privilege Escalation
 
-### BloodHound — Second Iteration
+### BloodHound - Second Iteration
 
 Re-running BloodHound with Emily's context reveals the path to domain compromise:
 
@@ -190,7 +190,7 @@ Re-running BloodHound with Emily's context reveals the path to domain compromise
 Emily → [GenericWrite] → Ethan → [GetChangesAll] → Domain (DCSync)
 ```
 
-Emily holds `GenericWrite` over Ethan. Ethan holds `GetChangesAll` on the domain — the privilege required for DCSync.
+Emily holds `GenericWrite` over Ethan. Ethan holds `GetChangesAll` on the domain - the privilege required for DCSync.
 
 <img width="1092" height="171" alt="Pasted image 20260522204543" src="https://github.com/user-attachments/assets/57d335bb-ce9a-469c-9c44-8f8d6ab728a5" />
 
@@ -272,4 +272,4 @@ type C:\Users\Administrator\Desktop\root.txt
 
 ---
 
-_Writeup by ctxzero — HackTheBox: Administrator_
+_Writeup by ctxzero - HackTheBox: Administrator_
