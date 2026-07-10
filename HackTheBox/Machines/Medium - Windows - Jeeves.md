@@ -67,7 +67,7 @@ gobuster dir -u http://10.129.33.138:50000/ -w /usr/share/wordlists/seclists/Dis
 
 ### 3.1 Why is the Jenkins Script Console dangerous?
 
-Jenkins exposes a **Groovy Script Console** at `/script` that executes code directly on the server — with no sandbox. Anyone with access to this console can run arbitrary code on the underlying system.
+Jenkins exposes a **Groovy Script Console** at `/script` that executes code directly on the server - with no sandbox. Anyone with access to this console can run arbitrary code on the underlying system.
 
 ### 3.2 Reverse Shell
 
@@ -189,7 +189,7 @@ hashcat -m 13400 CEH.hash /usr/share/wordlists/rockyou.txt
 
 Opening the database with **KeePassXC** reveals several credentials. Most notably, the "Backup stuff" entry contains a password that looks like an **NTLM hash** (32 hex characters).
 
-> **NTLM hashes** are used by Windows for password storage. The key insight here: they don't need to be cracked — they can be used directly for authentication via Pass-the-Hash.
+> **NTLM hashes** are used by Windows for password storage. The key insight here: they don't need to be cracked - they can be used directly for authentication via Pass-the-Hash.
 
 ---
 
@@ -204,7 +204,7 @@ netexec smb 10.129.33.138 -u administrator -H <hash>
 ```
 <img width="1146" height="117" alt="vmware_GunnmpdSqR 1" src="https://github.com/user-attachments/assets/e3d5b8ba-65be-4b8e-90e0-ae26c39af589" />
 
-Success — the hash is valid!
+Success - the hash is valid!
 
 ### 6.2 Shell as SYSTEM
 
@@ -224,7 +224,7 @@ We are now `NT AUTHORITY\SYSTEM`.
 
 ### 7.1 The Problem
 
-On the Administrator's Desktop there is no `root.txt` — instead we find a file called `hm.txt` with the message:  
+On the Administrator's Desktop there is no `root.txt` - instead we find a file called `hm.txt` with the message:  
 _"The flag is elsewhere. Look deeper."_
 
 <img width="379" height="64" alt="vmware_th2cOwqr5f" src="https://github.com/user-attachments/assets/1096ca2a-d9b4-4547-9cd8-ef0b22b5136a" />
@@ -245,7 +245,7 @@ dir /r
 ```
 <img width="595" height="240" alt="vmware_FltUBoiBYh" src="https://github.com/user-attachments/assets/85a95187-f765-4f2c-888e-19366d38e0d5" />
 
-We can see `hm.txt:root.txt` — the flag is embedded as a hidden stream inside `hm.txt`.
+We can see `hm.txt:root.txt` - the flag is embedded as a hidden stream inside `hm.txt`.
 
 To read it we use `more`:
 
