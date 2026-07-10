@@ -1,5 +1,5 @@
 
-# HackTheBox — Voleur
+# HackTheBox - Voleur
 
 **Difficulty:** Medium | **OS:** Windows 
 
@@ -68,7 +68,7 @@ Edit `/etc/krb5.conf`:
 
 ---
 
-## Initial Access — ryan.naylor
+## Initial Access - ryan.naylor
 
 Starting credentials provided: `ryan.naylor:HollowOct31Nyt`
 
@@ -108,14 +108,14 @@ john excel.hash --wordlist=/usr/share/wordlists/rockyou.txt
 | User         | Rights             | Notes                                                   |
 | ------------ | ------------------ | ------------------------------------------------------- |
 | ryan.naylor  | SMB                | Kerberos disabled                                       |
-| marie.bryant | SMB                | —                                                       |
-| lacey.miller | WinRM              | —                                                       |
+| marie.bryant | SMB                | -                                                       |
+| lacey.miller | WinRM              | -                                                       |
 | jeremy.combs | WinRM              | Access to Software folder                               |
-| todd.wolfe   | —                  | Account deleted, password reset to `NightT1meP1dg3on14` |
-| svc_backup   | Windows Backup     | —                                                       |
+| todd.wolfe   | -                  | Account deleted, password reset to `NightT1meP1dg3on14` |
+| svc_backup   | Windows Backup     | -                                                       |
 | svc_ldap     | LDAP Services      | `M1XyC9pW7qT5Vn`                                        |
 | svc_iis      | IIS Administration | `N5pXyW1VqM7CZ8`                                        |
-| svc_winrm    | WinRM              | —                                                       |
+| svc_winrm    | WinRM              | -                                                       |
 
 
 <img width="1254" height="568" alt="Pasted image 20260522024123" src="https://github.com/user-attachments/assets/c24171d0-ae5b-46d4-8cb0-dbc7cbbc6b4b" />
@@ -141,7 +141,7 @@ RESTORE_USERS  ──GenericWrite──►  Second-Line Support Technicians (OU)
 
 ---
 
-## Foothold — svc_winrm via Targeted Kerberoasting
+## Foothold - svc_winrm via Targeted Kerberoasting
 
 Obtain TGT for `svc_ldap`:
 
@@ -177,7 +177,7 @@ evil-winrm -i dc.voleur.htb -r VOLEUR.HTB
 
 ---
 
-## Lateral Movement — todd.wolfe via AD Restore
+## Lateral Movement - todd.wolfe via AD Restore
 
 The Excel file noted that `todd.wolfe` was deleted with a known reset password. The `RESTORE_USERS` group membership of `svc_ldap` allows restoring deleted AD objects.
 
@@ -197,7 +197,7 @@ export KRB5CCNAME=todd.wolfe.ccache
 
 ---
 
-## DPAPI Credential Decryption — jeremy.combs
+## DPAPI Credential Decryption - jeremy.combs
 
 Browsing SMB shares as `todd.wolfe` reveals DPAPI artifacts in his archived profile:
 
@@ -236,7 +236,7 @@ impacket-dpapi credential \
 
 ---
 
-## Pivoting — svc_backup via SSH (WSL)
+## Pivoting - svc_backup via SSH (WSL)
 
 WinRM as `jeremy.combs`:
 
@@ -256,7 +256,7 @@ ssh svc_backup@10.129.232.130 -i id_rsa -p 2222
 
 ---
 
-## Privilege Escalation — NTDS.dit Dump
+## Privilege Escalation - NTDS.dit Dump
 
 As `svc_backup` inside WSL, the Windows filesystem is mounted at `/mnt/c`. The IT share contains a full AD backup:
 
@@ -295,7 +295,7 @@ Administrator:500:aad3b435b51404eeaad3b435b51404ee:e656e07c56d831611b577b160b259
 
 ---
 
-## Domain Compromise — Pass-the-Hash via Kerberos
+## Domain Compromise - Pass-the-Hash via Kerberos
 
 ```bash
 impacket-getTGT voleur.htb/administrator \
@@ -314,4 +314,4 @@ evil-winrm -i dc.voleur.htb -u administrator -r voleur.htb
 
 ---
 
-_Writeup by ctx0 — HackTheBox Voleur_
+_Writeup by ctx0 - HackTheBox Voleur_
