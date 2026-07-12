@@ -36,6 +36,6 @@ Each writeup includes:
 
 - These writeups are shared **strictly for educational purposes**.
 - Only **retired or publicly available challenges** are documented, in accordance with the rules of each platform.
-- All content reflects my own understanding, workflow, and learning process—no copy-paste solutions.
+- All content reflects my own understanding, workflow, and learning process-no copy-paste solutions.
 
 
